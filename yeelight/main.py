@@ -26,6 +26,30 @@ except ImportError:
 
 _LOGGER = logging.getLogger(__name__)
 
+
+DEFAULT_PROPS = [
+    "power",
+    "bright",
+    "ct",
+    "rgb",
+    "hue",
+    "sat",
+    "color_mode",
+    "flowing",
+    "delayoff",
+    "music_on",
+    "name",
+    "bg_power",
+    "bg_flowing",
+    "bg_ct",
+    "bg_bright",
+    "bg_hue",
+    "bg_sat",
+    "bg_rgb",
+    "nl_br",
+    "active_mode",
+]
+
 _MODEL_SPECS = {
     "bslamp1": {
         "color_temp": {"min": 1700, "max": 6500},
@@ -216,16 +240,10 @@ def get_known_models():
     return list(_MODEL_SPECS.keys())
 
 
-@decorator
-def _command(f, *args, **kw):
-    """A decorator that wraps a function and enables effects."""
-    self = args[0]
-    effect = kw.get("effect", self.effect)
-    duration = kw.get("duration", self.duration)
-    power_mode = kw.get("power_mode", self.power_mode)
-
-    method, params, kwargs = f(*args, **kw)
-
+def _command_to_send_command(
+    self, method, params, kwargs, effect, duration, power_mode
+):
+    """Convert args and kwargs to method and params."""
     light_type = kwargs.get("light_type", LightType.Main)
 
     # Prepend the control for different bulbs
@@ -298,7 +316,23 @@ def _command(f, *args, **kw):
         ):
             params += [power_mode.value]
 
-    result = self.send_command(method, params).get("result", [])
+    return method, params
+
+
+@decorator
+def _command(f, *args, **kw):
+    """A decorator that wraps a function and enables effects."""
+    self = args[0]
+    cmd = self.send_command(
+        *_command_to_send_command(
+            self,
+            *f(*args, **kw),
+            kw.get("effect", self.effect),
+            kw.get("duration", self.duration),
+            kw.get("power_mode", self.power_mode)
+        )
+    )
+    result = cmd.get("result", [])
     if result:
         return result[0]
 
@@ -633,30 +667,7 @@ class Bulb(object):
         self._last_properties["current_brightness"] = cb
 
     def get_properties(
-        self,
-        requested_properties=[
-            "power",
-            "bright",
-            "ct",
-            "rgb",
-            "hue",
-            "sat",
-            "color_mode",
-            "flowing",
-            "delayoff",
-            "music_on",
-            "name",
-            "bg_power",
-            "bg_flowing",
-            "bg_ct",
-            "bg_bright",
-            "bg_hue",
-            "bg_sat",
-            "bg_rgb",
-            "nl_br",
-            "active_mode",
-        ],
-        ssdp_fallback=False,
+        self, requested_properties=DEFAULT_PROPS, ssdp_fallback=False,
     ):
         """
         Retrieve and return the properties of the bulb.
@@ -839,7 +850,9 @@ class Bulb(object):
         :param yeelight.LightType light_type: Light type to control.
         """
         self.ensure_on()
+        return self._set_hsv(hue, saturation, value, light_type, **kwargs)
 
+    def _set_hsv(self, hue, saturation, value, light_type, **kwargs):
         # We fake this using flow so we can add the `value` parameter.
         hue = _clamp(hue, 0, 359)
         saturation = _clamp(saturation, 0, 100)
@@ -1008,6 +1021,9 @@ class Bulb(object):
 
         :param yeelight.LightType light_type: Light type to control.
         """
+        return self._set_scene(scene_class, *args, light_type=light_type, **kwargs)
+
+    def _set_scene(self, scene_class, *args, light_type=LightType.Main, **kwargs):
         scene_args = [scene_class.name.lower()]
         if scene_class == SceneClass.COLOR:
             scene_args += [rgb_to_yeelight(*args[:3]), args[3]]
