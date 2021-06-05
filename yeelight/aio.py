@@ -8,13 +8,10 @@ from typing import Dict
 from future.utils import raise_from
 
 from .enums import LightType
-from .flow import Flow
 from .main import _command_to_send_command
 from .main import Bulb
 from .main import BulbException
 from .main import DEFAULT_PROPS
-from .utils import _clamp
-from .utils import rgb_to_yeelight
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -277,12 +274,7 @@ class AsyncBulb(Bulb):
         :param yeelight.LightType light_type: Light type to control.
         """
         await self.async_ensure_on()
-
-        return (
-            "set_ct_abx",
-            [self._clamp_color_temp(degrees)],
-            dict(kwargs, light_type=light_type),
-        )
+        return self._set_color_temp(degrees, light_type=light_type, **kwargs)
 
     @_async_command
     async def async_set_rgb(
@@ -298,12 +290,7 @@ class AsyncBulb(Bulb):
                           Light type to control.
         """
         await self.async_ensure_on()
-
-        return (
-            "set_rgb",
-            [rgb_to_yeelight(red, green, blue)],
-            dict(kwargs, light_type=light_type),
-        )
+        return self._set_rgb(red, green, blue, light_type=light_type, **kwargs)
 
     @_async_command
     async def async_set_adjust(self, action, prop, **kwargs):
@@ -321,7 +308,7 @@ class AsyncBulb(Bulb):
                            for color. The only action for "color" can be
                            "circle". Why? Who knows.
         """
-        return "set_adjust", [action, prop], kwargs
+        return self._set_adjust(action, prop, **kwargs)
 
     @_async_command
     async def async_set_hsv(
@@ -351,9 +338,7 @@ class AsyncBulb(Bulb):
         :param yeelight.LightType light_type: Light type to control.
         """
         await self.async_ensure_on()
-
-        brightness = _clamp(brightness, 1, 100)
-        return "set_bright", [brightness], dict(kwargs, light_type=light_type)
+        return self._set_brightness(brightness, light_type=light_type, **kwargs)
 
     @_async_command
     async def async_turn_on(self, light_type=LightType.Main, **kwargs):
@@ -362,7 +347,7 @@ class AsyncBulb(Bulb):
 
         :param yeelight.LightType light_type: Light type to control.
         """
-        return "set_power", ["on"], dict(kwargs, light_type=light_type)
+        return self._turn_on(light_type=light_type, **kwargs)
 
     @_async_command
     async def async_turn_off(self, light_type=LightType.Main, **kwargs):
@@ -371,7 +356,7 @@ class AsyncBulb(Bulb):
 
         :param yeelight.LightType light_type: Light type to control.
         """
-        return "set_power", ["off"], dict(kwargs, light_type=light_type)
+        return self._turn_off(light_type=light_type, **kwargs)
 
     @_async_command
     async def async_toggle(self, light_type=LightType.Main, **kwargs):
@@ -380,12 +365,12 @@ class AsyncBulb(Bulb):
 
         :param yeelight.LightType light_type: Light type to control.
         """
-        return "toggle", [], dict(kwargs, light_type=light_type)
+        return self._toggle(light_type=light_type, **kwargs)
 
     @_async_command
     async def async_dev_toggle(self, **kwargs):
         """Toggle the main light and the ambient on or off."""
-        return "dev_toggle", [], kwargs
+        return self._dev_toggle(**kwargs)
 
     @_async_command
     async def async_set_default(self, light_type=LightType.Main, **kwargs):
@@ -397,7 +382,7 @@ class AsyncBulb(Bulb):
 
         :param yeelight.LightType light_type: Light type to control.
         """
-        return "set_default", [], dict(kwargs, light_type=light_type)
+        return self._set_default(light_type=light_type, **kwargs)
 
     @_async_command
     async def async_set_name(self, name, **kwargs):
@@ -406,7 +391,7 @@ class AsyncBulb(Bulb):
 
         :param str name: The string you want to set as the bulb's name.
         """
-        return "set_name", [name], kwargs
+        return self._set_name(name, **kwargs)
 
     @_async_command
     async def async_start_flow(self, flow, light_type=LightType.Main, **kwargs):
@@ -415,16 +400,8 @@ class AsyncBulb(Bulb):
 
         :param yeelight.Flow flow: The Flow instance to start.
         """
-        if not isinstance(flow, Flow):
-            raise ValueError("Argument is not a Flow instance.")
-
         await self.async_ensure_on()
-
-        return (
-            "start_cf",
-            flow.as_start_flow_params,
-            dict(kwargs, light_type=light_type),
-        )
+        return self._start_start_flow(flow, light_type=light_type, **kwargs)
 
     @_async_command
     async def async_stop_flow(self, light_type=LightType.Main, **kwargs):
@@ -433,7 +410,7 @@ class AsyncBulb(Bulb):
 
         :param yeelight.LightType light_type: Light type to control.
         """
-        return "stop_cf", [], dict(kwargs, light_type=light_type)
+        return self._stop_flow(light_type=light_type, **kwargs)
 
     @_async_command
     async def async_set_scene(
@@ -496,7 +473,7 @@ class AsyncBulb(Bulb):
         :param yeelight.CronType event_type: The type of event. Currently,
                                                    only ``CronType.off``.
         """
-        return "cron_add", [event_type.value, value], kwargs
+        return self._cron_add(event_type, value, **kwargs)
 
     @_async_command
     async def async_cron_get(self, event_type, **kwargs):
@@ -506,7 +483,7 @@ class AsyncBulb(Bulb):
         :param yeelight.CronType event_type: The type of event. Currently,
                                                    only ``CronType.off``.
         """
-        return "cron_get", [event_type.value], kwargs
+        return self._cron_get(event_type, **kwargs)
 
     @_async_command
     async def cron_del(self, event_type, **kwargs):
@@ -516,7 +493,7 @@ class AsyncBulb(Bulb):
         :param yeelight.CronType event_type: The type of event. Currently,
                                                    only ``CronType.off``.
         """
-        return "cron_del", [event_type.value], kwargs
+        return self._cron_del(event_type, **kwargs)
 
     def __repr__(self):
         return "AsyncBulb<{ip}:{port}, type={type}>".format(

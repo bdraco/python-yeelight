@@ -793,7 +793,9 @@ class Bulb(object):
         :param yeelight.LightType light_type: Light type to control.
         """
         self.ensure_on()
+        return self._set_color_temp(degrees, light_type=light_type, **kwargs)
 
+    def _set_color_temp(self, degrees, light_type=LightType.Main, **kwargs):
         return (
             "set_ct_abx",
             [self._clamp_color_temp(degrees)],
@@ -812,7 +814,9 @@ class Bulb(object):
                           Light type to control.
         """
         self.ensure_on()
+        return self._set_rgb(red, green, blue, light_type=light_type, **kwargs)
 
+    def _set_rgb(self, red, green, blue, light_type=LightType.Main, **kwargs):
         return (
             "set_rgb",
             [rgb_to_yeelight(red, green, blue)],
@@ -835,6 +839,9 @@ class Bulb(object):
                            for color. The only action for "color" can be
                            "circle". Why? Who knows.
         """
+        return self._set_adjust(action, prop, **kwargs)
+
+    def _set_adjust(self, action, prop, **kwargs):
         return "set_adjust", [action, prop], kwargs
 
     @_command
@@ -892,7 +899,9 @@ class Bulb(object):
         :param yeelight.LightType light_type: Light type to control.
         """
         self.ensure_on()
+        return self._set_brightness(brightness, light_type=light_type, **kwargs)
 
+    def _set_brightness(self, brightness, light_type=LightType.Main, **kwargs):
         brightness = _clamp(brightness, 1, 100)
         return "set_bright", [brightness], dict(kwargs, light_type=light_type)
 
@@ -903,6 +912,9 @@ class Bulb(object):
 
         :param yeelight.LightType light_type: Light type to control.
         """
+        return self._turn_on(light_type=light_type, **kwargs)
+
+    def _turn_on(self, light_type=LightType.Main, **kwargs):
         return "set_power", ["on"], dict(kwargs, light_type=light_type)
 
     @_command
@@ -912,6 +924,9 @@ class Bulb(object):
 
         :param yeelight.LightType light_type: Light type to control.
         """
+        return self._turn_off(light_type=light_type, **kwargs)
+
+    def _turn_off(self, light_type=LightType.Main, **kwargs):
         return "set_power", ["off"], dict(kwargs, light_type=light_type)
 
     @_command
@@ -921,11 +936,17 @@ class Bulb(object):
 
         :param yeelight.LightType light_type: Light type to control.
         """
+        return self._toggle(light_type=light_type, **kwargs)
+
+    def _toggle(self, light_type=LightType.Main, **kwargs):
         return "toggle", [], dict(kwargs, light_type=light_type)
 
     @_command
     def dev_toggle(self, **kwargs):
         """Toggle the main light and the ambient on or off."""
+        return self._dev_toggle(**kwargs)
+
+    def _dev_toggle(self, **kwargs):
         return "dev_toggle", [], kwargs
 
     @_command
@@ -938,6 +959,9 @@ class Bulb(object):
 
         :param yeelight.LightType light_type: Light type to control.
         """
+        return self._set_default(light_type=light_type, **kwargs)
+
+    def _set_default(self, light_type=LightType.Main, **kwargs):
         return "set_default", [], dict(kwargs, light_type=light_type)
 
     @_command
@@ -947,6 +971,9 @@ class Bulb(object):
 
         :param str name: The string you want to set as the bulb's name.
         """
+        return self._set_name(name, **kwargs)
+
+    def _set_name(self, name, **kwargs):
         return "set_name", [name], kwargs
 
     @_command
@@ -956,10 +983,12 @@ class Bulb(object):
 
         :param yeelight.Flow flow: The Flow instance to start.
         """
+        self.ensure_on()
+        return self._start_start_flow(flow, light_type=light_type, **kwargs)
+
+    def _start_start_flow(self, flow, light_type=LightType.Main, **kwargs):
         if not isinstance(flow, Flow):
             raise ValueError("Argument is not a Flow instance.")
-
-        self.ensure_on()
 
         return (
             "start_cf",
@@ -974,6 +1003,9 @@ class Bulb(object):
 
         :param yeelight.LightType light_type: Light type to control.
         """
+        return self._stop_flow(light_type=light_type, **kwargs)
+
+    def _stop_flow(self, light_type=LightType.Main, **kwargs):
         return "stop_cf", [], dict(kwargs, light_type=light_type)
 
     @_command
@@ -1112,6 +1144,9 @@ class Bulb(object):
         :param yeelight.CronType event_type: The type of event. Currently,
                                                    only ``CronType.off``.
         """
+        return self._cron_add(event_type, value, **kwargs)
+
+    def _cron_add(self, event_type, value, **kwargs):
         return "cron_add", [event_type.value, value], kwargs
 
     @_command
@@ -1122,6 +1157,9 @@ class Bulb(object):
         :param yeelight.CronType event_type: The type of event. Currently,
                                                    only ``CronType.off``.
         """
+        return self._cron_get(event_type, **kwargs)
+
+    def _cron_get(self, event_type, **kwargs):
         return "cron_get", [event_type.value], kwargs
 
     @_command
@@ -1132,6 +1170,9 @@ class Bulb(object):
         :param yeelight.CronType event_type: The type of event. Currently,
                                                    only ``CronType.off``.
         """
+        return self._cron_del(event_type, **kwargs)
+
+    def _cron_del(self, event_type, **kwargs):
         return "cron_del", [event_type.value], kwargs
 
     def __repr__(self):
