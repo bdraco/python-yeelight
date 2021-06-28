@@ -20,6 +20,13 @@ PING_INTERVAL = 60
 
 
 def _async_command(f):
+    """
+    A decorator that wraps a function and enables effects.
+
+    This decorator can only be used with async functions
+    because it needs to call an awaitable.
+    """
+
     async def wrapper(*args, **kw):
         """A decorator that wraps a function and enables effects."""
         self = args[0]

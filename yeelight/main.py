@@ -243,7 +243,14 @@ def get_known_models():
 def _command_to_send_command(
     self, method, params, kwargs, effect, duration, power_mode
 ):
-    """Convert args and kwargs to method and params."""
+    """
+    Convert args and kwargs to method and params.
+
+    This provides the underlying fuctionality for the _command
+    decorator and aio._async_command decorator. This function
+    contains the code that can be shared between the sync
+    and async versions.
+    """
     light_type = kwargs.get("light_type", LightType.Main)
 
     # Prepend the control for different bulbs
