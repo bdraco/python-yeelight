@@ -9,6 +9,8 @@
 
 ### Fixes
 
+* Reduce chance of overloading bulb. [J. Nick Koston]
+
 * Use compact json commands. [J. Nick Koston]
 
 * Remove writer workaround from #61 with asyncio. [J. Nick Koston]
