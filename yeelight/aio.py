@@ -204,24 +204,14 @@ class AsyncBulb(Bulb):
                     data[KEY_CONNECTED] = True
                     self._async_callback(data)
                     continue
-                if (
-                    decoded_line["id"] == 0
-                    and decoded_line.get("message") == "invalid command"
-                ):
-                    _LOGGER.debug(
-                        "%s: protocol error, dropping connection and reconnecting",
-                        self,
-                    )
-                    # Force backoff since reconnect will not clear the quota right away
-                    self._socket_backoff = True
-                    return
 
-            if (
-                "error" in decoded_line
-                and decoded_line["error"].get("message") == "client quota exceeded"
+            if "error" in decoded_line and decoded_line["error"].get("message") in (
+                "client quota exceeded",
+                "invalid command",
             ):
                 _LOGGER.debug(
-                    "%s: client quota exceeded, dropping connection and reconnecting",
+                    "%s: %s, dropping connection and reconnecting",
+                    decoded_line["error"]["message"],
                     self,
                 )
                 # Force backoff since reconnect will not clear the quota right away

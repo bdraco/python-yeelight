@@ -9,6 +9,8 @@
 
 ### Fixes
 
+* Asyncio: Reconnect on protocol errors. [J. Nick Koston]
+
 * Reduce chance of overloading bulb. [J. Nick Koston]
 
 * Use compact json commands. [J. Nick Koston]
