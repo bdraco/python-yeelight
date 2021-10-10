@@ -214,7 +214,7 @@ class AsyncBulb(Bulb):
             ):
                 message = decoded_line["error"]["message"]
                 _LOGGER.debug(
-                    "%s: %s, dropping connection and reconnecting", message, self,
+                    "%s: %s, dropping connection and reconnecting", self, message
                 )
                 if message in BACKOFF_ERRORS:
                     # Force backoff since reconnect will not clear the quota right away
